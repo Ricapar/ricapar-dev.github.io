@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ricapar.dev</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Sixtyfour&display=swap" rel="stylesheet">        
+        <style type="text/css">
+            body {
+                background: #01160d;
+                margin: 0;
+                padding: 75px;
+            }
+            div {
+                color: #00cc62;
+                font-size: 25px;
+                line-height: 1.5em;
+                font-family: "Sixtyfour", sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 400;
+                font-style: normal;
+                font-variation-settings:
+                    "BLED" 20,
+                    "SCAN" -20;
+            }
+            a {
+                color: #00cc62;
+            }
+            li {
+                list-style-type: "*";
+                padding-left: 20px;
+            }
+            .cursor { animation: blinker 1.5s step-start infinite }
+            @keyframes blinker {
+                50% {
+                    opacity: 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+        <p>$ whoami</p>
+        <p>rich.acosta</p>
+
+        <p>$ cat ~/links.md</p>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/richacosta">Rich Acosta on LinkedIn</a></li>
+            <li><a href="https://www.instagram.com/kd2sqk">@KD2SQK on Instagram</li>
+            <li><a href="https://www.qrz.com/db/KD2SQK">KD2SQK on QRZ</a></li>
+        </ul>
+        $ <span class="cursor">_</span>
+        </div>
+    </body>
+</html>
+
