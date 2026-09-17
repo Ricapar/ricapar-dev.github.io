@@ -13,7 +13,9 @@
 /* Designed for an iPad Pro 11": 1194 x 834 CSS px in landscape, 834 x 1194 in portrait.
    Nothing may scroll: the item grid shrinks cards and adds columns instead of growing downward.
    Landscape: price list on the left, total + keypad on the right.
-   Portrait: title / total bar / price list / keypad panel, stacked (see the bottom of this file). */
+   Portrait: title / total bar / price list / keypad panel, stacked.
+   Phones (< 600px wide or < 500px tall) can't fit everything, so the price list scrolls and the
+   keypad becomes a slide-up sheet. See the sections at the bottom of this file. */
 :root {
   --bg: #f3efe6;
   --panel: #ffffff;
@@ -290,6 +292,19 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
   gap: 8px;
 }
 
+.custom-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Phone-only controls (see the phone section at the bottom). */
+.custom-close,
+.custom-toggle,
+.sheet-backdrop { display: none; }
+
 .entry-row {
   flex: none;
   display: flex;
@@ -490,7 +505,7 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
       "keypad list";
     gap: 8px 14px;
   }
-  .custom-panel .panel-label { grid-area: label; }
+  .custom-head { grid-area: label; }
   .entry-row { grid-area: entry; }
   .keypad { grid-area: keypad; }
   .btn-add { grid-area: add; height: auto; min-height: 56px; }
@@ -502,6 +517,154 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
     top: calc(10px + env(safe-area-inset-top, 0px));
     bottom: auto;
   }
+}
+
+/* ---- Phones: pinned total, scrolling price list, keypad in a slide-up sheet ---- */
+@media (max-width: 600px), (max-height: 500px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "top" "total" "items" "toggle";
+    gap: 8px;
+  }
+  .main, .side { display: contents; }
+  .topbar { grid-area: top; }
+  .topbar h1 { font-size: 17px; }
+
+  .total-panel {
+    grid-area: total;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label count new"
+      "amount amount new";
+    column-gap: 10px;
+    align-items: center;
+    padding: 6px 8px 6px 12px;
+  }
+  .total-panel .panel-label { grid-area: label; }
+  .total-count { grid-area: count; margin: 0; font-size: 15px; }
+  .total-amount { grid-area: amount; font-size: 38px; }
+  .btn-new { grid-area: new; height: 52px; padding: 0 16px; font-size: 17px; }
+
+  .items {
+    grid-area: items;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-content: start;
+    align-items: start;
+    gap: 14px 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .column { min-height: auto; gap: 6px; }
+  .card { flex: none; max-height: none; padding: 6px 6px 7px 8px; }
+  .card-controls { flex: none; height: 48px; max-height: none; gap: 4px; }
+  .step { font-size: 16px; }
+  .qty { font-size: 24px; }
+
+  .custom-toggle {
+    grid-area: toggle;
+    display: block;
+    height: 52px;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 18px;
+    font-weight: 750;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .custom-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    max-height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding:
+      12px
+      calc(14px + env(safe-area-inset-right, 0px))
+      calc(14px + env(safe-area-inset-bottom, 0px))
+      calc(14px + env(safe-area-inset-left, 0px));
+    border-width: 2px 0 0;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+    transform: translateY(105%);
+    visibility: hidden;
+    transition: transform 200ms ease, visibility 0s linear 200ms;
+  }
+  .custom-panel.open {
+    transform: none;
+    visibility: visible;
+    transition: transform 200ms ease;
+  }
+  .custom-close {
+    display: block;
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 10px;
+    background: var(--key);
+    font-size: 18px;
+    font-weight: 750;
+  }
+  .keypad { grid-auto-rows: 52px; }
+  .btn-add { flex: none; height: 52px; min-height: 0; }
+  .custom-list {
+    flex: none;
+    contain: none;
+    max-height: 102px; /* two rows; more scroll inside the sheet */
+  }
+  .custom-list:empty { display: none; }
+
+  .toast {
+    z-index: 30;
+    left: 50%;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    max-width: calc(100vw - 20px);
+  }
+}
+
+/* Phone held sideways: very little height, so put the sheet's keypad beside its list. */
+@media (max-height: 500px) {
+  .topbar { display: none; }
+  .total-panel {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "label amount count new";
+  }
+  .total-amount { font-size: 30px; }
+  .custom-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "head head"
+      "entry add"
+      "keypad list";
+    align-items: start;
+    column-gap: 14px;
+  }
+  .custom-head { grid-area: head; }
+  .entry-row { grid-area: entry; }
+  .keypad { grid-area: keypad; grid-auto-rows: 44px; }
+  .btn-add { grid-area: add; }
+  .custom-list { grid-area: list; max-height: 200px; }
 }
 
 [hidden] { display: none !important; }
@@ -525,8 +688,11 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
       <button id="new-customer" class="btn-new" type="button">New customer</button>
     </section>
 
-    <section class="panel custom-panel" aria-label="Custom price">
-      <div class="panel-label">Custom price</div>
+    <section id="custom-panel" class="panel custom-panel" aria-label="Custom price">
+      <div class="custom-head">
+        <div class="panel-label">Custom price</div>
+        <button id="custom-close" class="custom-close" type="button">Done</button>
+      </div>
       <div class="entry-row">
         <output id="entry" class="entry">$0.00</output>
         <button id="entry-clear" class="entry-clear" type="button" aria-label="Clear custom price">C</button>
@@ -535,8 +701,13 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
       <button id="add-custom" class="btn-add" type="button" disabled>Enter a price</button>
       <ul id="custom-list" class="custom-list" data-empty="Custom-priced books show up here"></ul>
     </section>
+
+    <!-- Phones only: the custom-price panel becomes a slide-up sheet. -->
+    <button id="custom-toggle" class="custom-toggle" type="button" aria-controls="custom-panel" aria-expanded="false">Custom price</button>
   </aside>
 </div>
+
+<div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
 
 <div id="toast" class="toast" role="status" hidden>
   <span>Cart cleared</span>
@@ -921,6 +1092,17 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
     $('toast').hidden = true;
   }
 
+  // Phones only; on larger screens the panel is always visible and these are hidden.
+  function setSheet(open) {
+    $('custom-panel').classList.toggle('open', open);
+    $('sheet-backdrop').hidden = !open;
+    $('custom-toggle').setAttribute('aria-expanded', String(open));
+  }
+
+  function isSheetOpen() {
+    return $('custom-panel').classList.contains('open');
+  }
+
   function addCustom() {
     const cents = B.entryToCents(entry);
     if (!cents) return;
@@ -994,6 +1176,9 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
     });
 
     $('entry-clear').addEventListener('click', () => setEntry(''));
+    $('custom-toggle').addEventListener('click', () => setSheet(true));
+    $('custom-close').addEventListener('click', () => setSheet(false));
+    $('sheet-backdrop').addEventListener('click', () => setSheet(false));
     $('add-custom').addEventListener('click', addCustom);
 
     $('custom-list').addEventListener('click', (event) => {
@@ -1006,7 +1191,7 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (/^\d$/.test(event.key)) setEntry(B.pressKey(entry, event.key));
       else if (event.key === 'Backspace') setEntry(B.pressKey(entry, 'back'));
-      else if (event.key === 'Escape') setEntry('');
+      else if (event.key === 'Escape') isSheetOpen() ? setSheet(false) : setEntry('');
       else if (event.key === 'Enter') addCustom();
       else return;
       event.preventDefault();
@@ -1044,6 +1229,19 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
     $('new-customer').disabled = itemCount === 0;
 
     renderCustomList();
+    renderCustomToggle();
+  }
+
+  function renderCustomToggle() {
+    let count = 0;
+    let cents = 0;
+    for (const line of cart.custom) {
+      count += line.qty;
+      cents += line.qty * line.cents;
+    }
+    $('custom-toggle').textContent = count
+      ? `Custom price \u00B7 ${count} book${count === 1 ? '' : 's'}, ${B.formatCents(cents)}`
+      : 'Custom price';
   }
 
   function renderCustomList() {
