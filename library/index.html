@@ -10,8 +10,10 @@
 <meta name="color-scheme" content="light">
 <title>Book Sale</title>
 <style>
-/* Designed for an iPad Pro 11" in landscape (1194 x 834 CSS px). Nothing may scroll:
-   the item grid shrinks cards and adds columns instead of growing downward. */
+/* Designed for an iPad Pro 11": 1194 x 834 CSS px in landscape, 834 x 1194 in portrait.
+   Nothing may scroll: the item grid shrinks cards and adds columns instead of growing downward.
+   Landscape: price list on the left, total + keypad on the right.
+   Portrait: title / total bar / price list / keypad panel, stacked (see the bottom of this file). */
 :root {
   --bg: #f3efe6;
   --panel: #ffffff;
@@ -429,9 +431,10 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .fatal h2 { margin: 0; font-size: 30px; }
 .fatal p { margin: 0; max-width: 40em; }
 
-/* Safari with its toolbars showing leaves roughly 750-790px of height.
+/* Safari with its toolbars showing leaves roughly 750-790px of height in landscape.
+   Portrait has more height but spends it on the stacked panels, so it uses the same sizes.
    Tighten everything so it still fits without scrolling; tap targets stay >= 44px. */
-@media (max-height: 800px) {
+@media (max-height: 800px), (orientation: portrait) {
   .main { gap: 6px; }
   .topbar h1 { font-size: 20px; }
   .column { gap: 5px; }
@@ -448,6 +451,57 @@ button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
   .entry { height: 52px; font-size: 34px; }
   .keypad { grid-auto-rows: 47px; }
   .key { font-size: 24px; }
+}
+
+/* ---- Portrait: stack everything in one column ---- */
+@media (orientation: portrait) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "top" "total" "items" "custom";
+  }
+  /* Let the landscape wrappers' children become grid items of .app. */
+  .main, .side { display: contents; }
+  .topbar { grid-area: top; }
+  .items { grid-area: items; }
+
+  .total-panel {
+    grid-area: total;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) minmax(220px, 38%);
+    grid-template-areas:
+      "label label new"
+      "amount count new";
+    column-gap: 16px;
+    align-items: baseline;
+  }
+  .total-panel .panel-label { grid-area: label; }
+  .total-amount { grid-area: amount; }
+  .total-count { grid-area: count; margin: 0; }
+  .btn-new { grid-area: new; align-self: center; height: 64px; }
+
+  .custom-panel {
+    grid-area: custom;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "label add"
+      "entry add"
+      "keypad list";
+    gap: 8px 14px;
+  }
+  .custom-panel .panel-label { grid-area: label; }
+  .entry-row { grid-area: entry; }
+  .keypad { grid-area: keypad; }
+  .btn-add { grid-area: add; height: auto; min-height: 56px; }
+  /* Size to the keypad's row instead of growing it with many custom prices. */
+  .custom-list { grid-area: list; contain: size; }
+
+  .toast {
+    left: 50%;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+  }
 }
 
 [hidden] { display: none !important; }
