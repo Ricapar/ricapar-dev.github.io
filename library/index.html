@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Book Sale">
+<meta name="color-scheme" content="light">
+<title>Book Sale</title>
+<style>
+/* Designed for an iPad Pro 11" in landscape (1194 x 834 CSS px). Nothing may scroll:
+   the item grid shrinks cards and adds columns instead of growing downward. */
+:root {
+  --bg: #f3efe6;
+  --panel: #ffffff;
+  --ink: #1c232b;
+  --muted: #5d6673;
+  --line: #d8d1c2;
+  --accent: #1d6b58;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f0eb;
+  --minus: #ebe7de;
+  --minus-ink: #8a3a2b;
+  --key: #eceef1;
+  --warn-bg: #fff1c9;
+  --warn-ink: #634800;
+  --radius: 14px;
+  --gap: 10px;
+  --side-width: 400px;
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  margin: 0;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition: transform 60ms ease, filter 60ms ease, opacity 120ms ease;
+}
+button:active:not(:disabled) { transform: scale(0.94); filter: brightness(0.88); }
+button:disabled { cursor: default; opacity: 0.35; }
+button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side-width);
+  gap: var(--gap);
+  padding:
+    calc(var(--gap) + env(safe-area-inset-top, 0px))
+    calc(var(--gap) + env(safe-area-inset-right, 0px))
+    calc(var(--gap) + env(safe-area-inset-bottom, 0px))
+    calc(var(--gap) + env(safe-area-inset-left, 0px));
+}
+
+/* ---- Left: title + price list ---- */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.topbar {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  min-width: 0;
+  padding: 0 4px;
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.warnings {
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.items {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--gap);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+.card + .column-head { margin-top: 4px; }
+.column-head {
+  flex: none;
+  margin: 0;
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.card {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 10px 9px;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+}
+.card.has-qty {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.card-top {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card-label {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.card-price {
+  flex: none;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-controls {
+  flex: 1 1 52px;
+  min-height: 44px;
+  max-height: 64px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.35fr) repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.step {
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.step.minus { background: var(--minus); color: var(--minus-ink); }
+.step.plus { background: var(--accent); color: var(--accent-ink); }
+
+.qty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--panel);
+  font-size: 30px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.card.has-qty .qty { color: var(--ink); border-color: var(--accent); }
+
+.bump { animation: bump 180ms ease-out; }
+@keyframes bump {
+  40% { transform: scale(1.18); }
+}
+
+/* ---- Right: total, custom price ---- */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.panel-label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.total-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.total-amount {
+  font-size: 64px;
+  line-height: 1.12;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.total-count {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.btn-new {
+  height: 56px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.custom-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.entry-row {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+.entry {
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  font-size: 40px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.entry.is-zero { color: var(--muted); }
+.entry-clear {
+  flex: none;
+  width: 64px;
+  border-radius: 10px;
+  background: var(--minus);
+  color: var(--minus-ink);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.keypad {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 56px;
+  gap: 6px;
+}
+.key {
+  border-radius: 10px;
+  background: var(--key);
+  font-size: 27px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-add {
+  flex: none;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.custom-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 48px;
+  align-content: start;
+  gap: 6px;
+  /* Only reachable with an unusual number of distinct custom prices. */
+  overflow-y: auto;
+}
+.custom-list:empty::before {
+  content: attr(data-empty);
+  grid-column: 1 / -1;
+  align-self: center;
+  justify-self: center;
+  color: var(--muted);
+  font-size: 16px;
+}
+.custom-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 2px 2px 10px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.custom-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-item .step { height: 44px; }
+
+/* ---- Overlays ---- */
+
+.toast {
+  position: fixed;
+  left: calc((100vw - var(--side-width)) / 2);
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 10px 10px 22px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 650;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.toast-undo {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.fatal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  background: var(--bg);
+  font-size: 22px;
+  text-align: center;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.fatal h2 { margin: 0; font-size: 30px; }
+.fatal p { margin: 0; max-width: 40em; }
+
+/* Safari with its toolbars showing leaves roughly 750-790px of height.
+   Tighten everything so it still fits without scrolling; tap targets stay >= 44px. */
+@media (max-height: 800px) {
+  .main { gap: 6px; }
+  .topbar h1 { font-size: 20px; }
+  .column { gap: 5px; }
+  .card + .column-head { margin-top: 4px; }
+.column-head { font-size: 13px; line-height: 1.2; }
+  .card { padding: 5px 8px 6px; gap: 4px; }
+  .card-label, .card-price { font-size: 17px; line-height: 1.1; }
+  .qty { font-size: 26px; }
+  .panel { padding: 10px 12px; }
+  .panel-label { font-size: 13px; }
+  .total-amount { font-size: 52px; }
+  .total-count { font-size: 18px; margin-bottom: 6px; }
+  .btn-new, .btn-add { height: 50px; font-size: 19px; }
+  .entry { height: 52px; font-size: 34px; }
+  .keypad { grid-auto-rows: 47px; }
+  .key { font-size: 24px; }
+}
+
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="main">
+    <header class="topbar">
+      <h1 id="title"></h1>
+      <p id="warnings" class="warnings" hidden></p>
+    </header>
+    <main id="items" class="items" aria-label="Price list"></main>
+  </div>
+
+  <aside class="side">
+    <section class="panel total-panel" aria-label="Cart total">
+      <div class="panel-label">Total</div>
+      <div id="total" class="total-amount" aria-live="polite">$0.00</div>
+      <div id="count" class="total-count">0 items</div>
+      <button id="new-customer" class="btn-new" type="button">New customer</button>
+    </section>
+
+    <section class="panel custom-panel" aria-label="Custom price">
+      <div class="panel-label">Custom price</div>
+      <div class="entry-row">
+        <output id="entry" class="entry">$0.00</output>
+        <button id="entry-clear" class="entry-clear" type="button" aria-label="Clear custom price">C</button>
+      </div>
+      <div id="keypad" class="keypad"></div>
+      <button id="add-custom" class="btn-add" type="button" disabled>Enter a price</button>
+      <ul id="custom-list" class="custom-list" data-empty="Custom-priced books show up here"></ul>
+    </section>
+  </aside>
+</div>
+
+<div id="toast" class="toast" role="status" hidden>
+  <span>Cart cleared</span>
+  <button id="undo" class="toast-undo" type="button">Undo</button>
+</div>
+
+<div id="fatal" class="fatal" role="alert" hidden></div>
+
+<script>window.BOOKSALE_DATA = {"csv":"category,description,price\nChildren's,Board Books,1.00\nChildren's,Softcover,1.00\nChildren's,Golden Books,1.00\nChildren's,Large Hardcover Picture Books,2.00\nChildren's,Adult-Sized Hardcover,2.00\nChildren's,Extra Small Softcover,free\nAdults,Hardbound,2.00\nAdults,Trade Paper,1.50\nAdults,Mass Market Paper,1.00\nAudio/Visual,Audiobooks,1.00\nAudio/Visual,\"DVDs ($1 per disc, max $5 per set)\",1.00\nAudio/Visual,\"CDs ($1 per disc, max $5 per set)\",1.00\n","config":{"title":"Friends of the Fanwood Library Book Sale"}};</script>
+<script>
+// Pure logic shared by the browser app, the build script, and the tests.
+// No DOM access in here. All money is integer cents.
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.BookSale = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const DEFAULT_TITLE = 'Library Book Sale';
+  const MAX_QTY = 999;
+  const MAX_ENTRY_DIGITS = 6; // $9,999.99
+  const REQUIRED_COLUMNS = ['category', 'description', 'price'];
+  // A category heading takes roughly a quarter of a card's height.
+  const HEADER_COST = 0.25;
+
+  // RFC 4180-ish: quoted fields, doubled quotes, CRLF/LF, leading BOM.
+  function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let field = '';
+    let inQuotes = false;
+    let i = text.charCodeAt(0) === 0xfeff ? 1 : 0;
+    for (; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c !== '"') field += c;
+        else if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else if (c === '"') {
+        inQuotes = true;
+      } else if (c === ',') {
+        row.push(field);
+        field = '';
+      } else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = '';
+      } else {
+        field += c;
+      }
+    }
+    if (field !== '' || row.length) {
+      row.push(field);
+      rows.push(row);
+    }
+    return rows.filter((r) => r.some((f) => f.trim() !== ''));
+  }
+
+  // "0.75" -> 75, "$2" -> 200, "1.5" -> 150, "free" -> 0. Anything else -> null.
+  // Parsed as a string so no float ever touches the money path.
+  function parsePriceCents(value) {
+    const text = String(value).trim();
+    if (/^free$/i.test(text)) return 0;
+    const m = /^\$?(\d*)(?:\.(\d{0,2}))?$/.exec(text);
+    if (!m || (m[1] === '' && !m[2])) return null;
+    return Number(m[1] || '0') * 100 + Number((m[2] || '').padEnd(2, '0'));
+  }
+
+  function formatPrice(cents) {
+    return cents === 0 ? 'Free' : formatCents(cents);
+  }
+
+  function formatCents(cents) {
+    const sign = cents < 0 ? '-' : '';
+    const abs = Math.abs(cents);
+    const dollars = Math.floor(abs / 100).toLocaleString('en-US');
+    return `${sign}$${dollars}.${String(abs % 100).padStart(2, '0')}`;
+  }
+
+  function loadPriceTable(csvText) {
+    const rows = parseCsv(csvText);
+    if (!rows.length) throw new Error('the file is empty');
+    const header = rows[0].map((h) => h.trim().toLowerCase());
+    const missing = REQUIRED_COLUMNS.filter((c) => !header.includes(c));
+    if (missing.length) {
+      throw new Error(`missing column(s): ${missing.join(', ')}. The first line must be "category,description,price"`);
+    }
+    const col = Object.fromEntries(REQUIRED_COLUMNS.map((c) => [c, header.indexOf(c)]));
+
+    const items = [];
+    const warnings = [];
+    const seen = new Set();
+    rows.slice(1).forEach((r, idx) => {
+      const line = idx + 2;
+      const category = (r[col.category] || '').trim() || 'Other';
+      const description = (r[col.description] || '').trim();
+      const rawPrice = (r[col.price] || '').trim();
+      const cents = parsePriceCents(rawPrice);
+      if (!description) {
+        warnings.push(`price_table.csv line ${line}: no description, skipped`);
+        return;
+      }
+      if (cents === null) {
+        warnings.push(`price_table.csv line ${line}: price "${rawPrice}" is not a valid amount, skipped`);
+        return;
+      }
+      const id = JSON.stringify([category, description, cents]);
+      if (seen.has(id)) {
+        warnings.push(`price_table.csv line ${line}: duplicate of an earlier row, skipped`);
+        return;
+      }
+      seen.add(id);
+      items.push({ id, category, description, cents });
+    });
+    return { items, warnings };
+  }
+
+  function normalizeConfig(raw) {
+    const warnings = [];
+    const config = { title: DEFAULT_TITLE };
+    if (raw == null) return { config, warnings };
+    if (typeof raw !== 'object' || Array.isArray(raw)) {
+      warnings.push('config.json should contain a { ... } object; using defaults');
+      return { config, warnings };
+    }
+    if (raw.title !== undefined) {
+      if (typeof raw.title === 'string' && raw.title.trim()) config.title = raw.title.trim();
+      else warnings.push('config.json "title" should be non-empty text; using the default');
+    }
+    return { config, warnings };
+  }
+
+  // Preserves the order categories first appear in the CSV.
+  function groupByCategory(items) {
+    const groups = new Map();
+    for (const item of items) {
+      if (!groups.has(item.category)) groups.set(item.category, []);
+      groups.get(item.category).push(item);
+    }
+    return [...groups].map(([category, groupItems]) => ({ category, items: groupItems }));
+  }
+
+  // Lays categories out into columns so the grid grows sideways, never downward.
+  // Each column holds cards plus HEADER_COST per heading, up to `capacity`.
+  // Long categories are split into balanced chunks; short consecutive ones
+  // share a column (in CSV order) so columns don't get too narrow to tap.
+  function layoutColumns(groups, capacity) {
+    const maxCards = Math.max(1, Math.floor(capacity - HEADER_COST));
+    const chunks = [];
+    for (const { category, items } of groups) {
+      const count = Math.ceil(items.length / maxCards);
+      const size = Math.ceil(items.length / count);
+      for (let c = 0; c < count; c++) {
+        chunks.push({ category, continued: c > 0, items: items.slice(c * size, (c + 1) * size) });
+      }
+    }
+
+    const columns = [];
+    let used = Infinity;
+    for (const chunk of chunks) {
+      const cost = chunk.items.length + HEADER_COST;
+      if (used + cost > capacity) {
+        columns.push({ sections: [] });
+        used = 0;
+      }
+      columns[columns.length - 1].sections.push(chunk);
+      used += cost;
+    }
+    return columns;
+  }
+
+  // Cart: { counts: { [itemId]: qty }, custom: [{ cents, qty }] }, newest custom price first.
+  function emptyCart() {
+    return { counts: {}, custom: [] };
+  }
+
+  function clampQty(n) {
+    return Math.max(0, Math.min(MAX_QTY, n));
+  }
+
+  function adjustItem(cart, id, delta) {
+    const counts = { ...cart.counts };
+    const qty = clampQty((counts[id] || 0) + delta);
+    if (qty) counts[id] = qty;
+    else delete counts[id];
+    return { ...cart, counts };
+  }
+
+  function adjustCustom(cart, cents, delta) {
+    if (!(cents > 0)) return cart;
+    const existing = cart.custom.find((c) => c.cents === cents);
+    const qty = clampQty((existing ? existing.qty : 0) + delta);
+    const rest = cart.custom.filter((c) => c.cents !== cents);
+    if (!qty) return { ...cart, custom: rest };
+    if (existing) return { ...cart, custom: cart.custom.map((c) => (c.cents === cents ? { cents, qty } : c)) };
+    return { ...cart, custom: [{ cents, qty }, ...rest] };
+  }
+
+  function cartSummary(cart, items) {
+    let itemCount = 0;
+    let totalCents = 0;
+    for (const item of items) {
+      const qty = cart.counts[item.id] || 0;
+      itemCount += qty;
+      totalCents += qty * item.cents;
+    }
+    for (const { cents, qty } of cart.custom) {
+      itemCount += qty;
+      totalCents += qty * cents;
+    }
+    return { itemCount, totalCents };
+  }
+
+  function isEmptyCart(cart) {
+    return !Object.keys(cart.counts).length && !cart.custom.length;
+  }
+
+  // Rebuilds a cart from untrusted storage, dropping anything that no longer
+  // matches the current price table.
+  function sanitizeCart(raw, items) {
+    const cart = emptyCart();
+    if (!raw || typeof raw !== 'object') return cart;
+    const known = new Set(items.map((i) => i.id));
+    for (const [id, qty] of Object.entries(raw.counts || {})) {
+      if (known.has(id) && Number.isInteger(qty) && qty > 0) cart.counts[id] = clampQty(qty);
+    }
+    if (Array.isArray(raw.custom)) {
+      for (const entry of raw.custom) {
+        if (!entry || !Number.isInteger(entry.cents) || !Number.isInteger(entry.qty)) continue;
+        if (entry.cents <= 0 || entry.qty <= 0 || cart.custom.some((c) => c.cents === entry.cents)) continue;
+        cart.custom.push({ cents: entry.cents, qty: clampQty(entry.qty) });
+      }
+    }
+    return cart;
+  }
+
+  // Cash-register entry: digits shift in from the right, so 3-5-0 is $3.50.
+  function pressKey(digits, key) {
+    if (key === 'clear') return '';
+    if (key === 'back') return digits.slice(0, -1);
+    if (!/^\d+$/.test(key)) return digits;
+    const next = (digits + key).replace(/^0+/, '');
+    return next.length > MAX_ENTRY_DIGITS ? digits : next;
+  }
+
+  function entryToCents(digits) {
+    return digits ? Number(digits) : 0;
+  }
+
+  return {
+    DEFAULT_TITLE,
+    MAX_QTY,
+    MAX_ENTRY_DIGITS,
+    parseCsv,
+    parsePriceCents,
+    formatCents,
+    formatPrice,
+    loadPriceTable,
+    normalizeConfig,
+    groupByCategory,
+    layoutColumns,
+    emptyCart,
+    adjustItem,
+    adjustCustom,
+    cartSummary,
+    isEmptyCart,
+    sanitizeCart,
+    pressKey,
+    entryToCents,
+  };
+});
+</script>
+<script>
+// UI layer. All pricing and cart rules live in lib.js (window.BookSale).
+(function () {
+  'use strict';
+
+  const B = window.BookSale;
+  const STORAGE_KEY = 'booksale.cart.v1';
+  // Cards per column, counting each category heading as 0.25 (see lib.js).
+  // 6 cards with two-line labels is the most that fits at ~750px tall.
+  const COLUMN_CAPACITY = 6.5;
+  const UNDO_MS = 8000;
+  const STEPS = [-10, -5, -1, 1, 5, 10];
+  const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'];
+
+  const $ = (id) => document.getElementById(id);
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function stepLabel(step) {
+    return step < 0 ? `−${-step}` : `+${step}`;
+  }
+
+  let items = [];
+  let cart = B.emptyCart();
+  let entry = '';
+  let undo = null; // { cart, timer }
+  const cards = []; // parallel to items: { card, qty, minus[] }
+
+  // ---- data ----
+
+  async function loadData() {
+    if (window.BOOKSALE_DATA) return { ...window.BOOKSALE_DATA, warnings: [] };
+
+    const warnings = [];
+    const csvRes = await fetch('data/price_table.csv', { cache: 'no-store' });
+    if (!csvRes.ok) throw new Error(`data/price_table.csv returned HTTP ${csvRes.status}`);
+    const csv = await csvRes.text();
+
+    let config = null;
+    try {
+      const cfgRes = await fetch('data/config.json', { cache: 'no-store' });
+      if (cfgRes.ok) config = JSON.parse(await cfgRes.text());
+      else warnings.push('data/config.json not found; using defaults');
+    } catch (err) {
+      warnings.push(`data/config.json could not be read (${err.message}); using defaults`);
+    }
+    return { csv, config, warnings };
+  }
+
+  function saveCart() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+    } catch (_) {
+      // Private browsing or storage disabled: the cart just won't survive a reload.
+    }
+  }
+
+  function restoreCart() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? B.sanitizeCart(JSON.parse(raw), items) : B.emptyCart();
+    } catch (_) {
+      return B.emptyCart();
+    }
+  }
+
+  // ---- state changes ----
+
+  function setCart(next) {
+    if (next === cart) return;
+    cart = next;
+    dismissUndo();
+    saveCart();
+    render();
+  }
+
+  function setEntry(next) {
+    entry = next;
+    renderEntry();
+  }
+
+  function newCustomer() {
+    if (B.isEmptyCart(cart)) return;
+    const previous = cart;
+    setCart(B.emptyCart());
+    setEntry('');
+    undo = { cart: previous, timer: setTimeout(dismissUndo, UNDO_MS) };
+    $('toast').hidden = false;
+  }
+
+  function undoClear() {
+    if (!undo) return;
+    const previous = undo.cart;
+    dismissUndo();
+    setCart(previous);
+  }
+
+  function dismissUndo() {
+    if (!undo) return;
+    clearTimeout(undo.timer);
+    undo = null;
+    $('toast').hidden = true;
+  }
+
+  function addCustom() {
+    const cents = B.entryToCents(entry);
+    if (!cents) return;
+    setCart(B.adjustCustom(cart, cents, 1));
+    setEntry('');
+  }
+
+  // ---- building the static UI ----
+
+  function buildItems() {
+    const container = $('items');
+    const columns = B.layoutColumns(B.groupByCategory(items), COLUMN_CAPACITY);
+    for (const column of columns) {
+      const node = el('div', 'column');
+      for (const section of column.sections) {
+        const heading = section.continued ? `${section.category} (cont.)` : section.category;
+        const head = el('h2', 'column-head', heading);
+        head.title = heading;
+        node.append(head);
+        for (const item of section.items) node.append(buildCard(item));
+      }
+      container.append(node);
+    }
+
+    container.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-index]');
+      if (!button) return;
+      const item = items[Number(button.dataset.index)];
+      setCart(B.adjustItem(cart, item.id, Number(button.dataset.step)));
+    });
+  }
+
+  function buildCard(item) {
+    const index = items.indexOf(item);
+    const card = el('div', 'card');
+    const top = el('div', 'card-top');
+    top.append(el('div', 'card-label', item.description), el('div', 'card-price', B.formatPrice(item.cents)));
+
+    const controls = el('div', 'card-controls');
+    const qty = el('div', 'qty', '0');
+    qty.setAttribute('aria-label', `${item.description} quantity`);
+    const minus = [];
+    for (const step of STEPS) {
+      if (step === 1) controls.append(qty);
+      const button = el('button', `step ${step < 0 ? 'minus' : 'plus'}`, stepLabel(step));
+      button.type = 'button';
+      button.dataset.index = index;
+      button.dataset.step = step;
+      button.setAttribute('aria-label', `${step < 0 ? 'Remove' : 'Add'} ${Math.abs(step)}: ${item.description}`);
+      if (step < 0) minus.push(button);
+      controls.append(button);
+    }
+
+    card.append(top, controls);
+    cards[index] = { card, qty, minus };
+    return card;
+  }
+
+  function buildKeypad() {
+    const pad = $('keypad');
+    for (const key of KEYS) {
+      const button = el('button', 'key', key === 'back' ? '⌫' : key);
+      button.type = 'button';
+      button.dataset.key = key;
+      if (key === 'back') button.setAttribute('aria-label', 'Backspace');
+      pad.append(button);
+    }
+    pad.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-key]');
+      if (button) setEntry(B.pressKey(entry, button.dataset.key));
+    });
+
+    $('entry-clear').addEventListener('click', () => setEntry(''));
+    $('add-custom').addEventListener('click', addCustom);
+
+    $('custom-list').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-cents]');
+      if (button) setCart(B.adjustCustom(cart, Number(button.dataset.cents), Number(button.dataset.step)));
+    });
+
+    // Hardware keyboard, handy when testing on a laptop.
+    document.addEventListener('keydown', (event) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (/^\d$/.test(event.key)) setEntry(B.pressKey(entry, event.key));
+      else if (event.key === 'Backspace') setEntry(B.pressKey(entry, 'back'));
+      else if (event.key === 'Escape') setEntry('');
+      else if (event.key === 'Enter') addCustom();
+      else return;
+      event.preventDefault();
+    });
+  }
+
+  // ---- rendering ----
+
+  function bump(node) {
+    node.classList.remove('bump');
+    void node.offsetWidth; // restart the animation
+    node.classList.add('bump');
+  }
+
+  function render() {
+    items.forEach((item, i) => {
+      const ref = cards[i];
+      const qty = cart.counts[item.id] || 0;
+      if (ref.qty.textContent !== String(qty)) {
+        ref.qty.textContent = qty;
+        bump(ref.qty);
+      }
+      ref.card.classList.toggle('has-qty', qty > 0);
+      for (const button of ref.minus) button.disabled = qty === 0;
+    });
+
+    const { itemCount, totalCents } = B.cartSummary(cart, items);
+    const total = $('total');
+    const totalText = B.formatCents(totalCents);
+    if (total.textContent !== totalText) {
+      total.textContent = totalText;
+      bump(total);
+    }
+    $('count').textContent = `${itemCount} item${itemCount === 1 ? '' : 's'}`;
+    $('new-customer').disabled = itemCount === 0;
+
+    renderCustomList();
+  }
+
+  function renderCustomList() {
+    const list = $('custom-list');
+    list.replaceChildren(
+      ...cart.custom.map(({ cents, qty }) => {
+        const price = B.formatCents(cents);
+        const row = el('li', 'custom-item');
+        const remove = el('button', 'step minus', stepLabel(-1));
+        remove.type = 'button';
+        remove.dataset.cents = cents;
+        remove.dataset.step = -1;
+        remove.setAttribute('aria-label', `Remove one ${price} book`);
+        row.append(el('span', null, qty > 1 ? `${price} \u00D7${qty}` : price), remove);
+        return row;
+      })
+    );
+  }
+
+  function renderEntry() {
+    const cents = B.entryToCents(entry);
+    const display = $('entry');
+    display.textContent = B.formatCents(cents);
+    display.classList.toggle('is-zero', cents === 0);
+    const add = $('add-custom');
+    add.disabled = cents === 0;
+    add.textContent = cents ? `Add ${B.formatCents(cents)} book` : 'Enter a price';
+  }
+
+  function showWarnings(warnings) {
+    if (!warnings.length) return;
+    for (const w of warnings) console.warn(`[booksale] ${w}`);
+    const node = $('warnings');
+    node.textContent = warnings.length === 1 ? warnings[0] : `${warnings[0]} (+${warnings.length - 1} more)`;
+    node.title = warnings.join('\n');
+    node.hidden = false;
+  }
+
+  function showFatal(message) {
+    const node = $('fatal');
+    const parts = [el('h2', null, 'The calculator could not start'), el('p', null, message)];
+    if (location.protocol === 'file:' && !window.BOOKSALE_DATA) {
+      parts.push(el('p', null,
+        'This page was opened directly from disk. Run "npm start" to use it from src/, ' +
+        'or run "npm run build" and open dist/index.html instead.'));
+    }
+    node.replaceChildren(...parts);
+    node.hidden = false;
+  }
+
+  // ---- screen wake lock (keeps the iPad awake during the sale where supported) ----
+
+  let wakeLock = null;
+  async function keepAwake() {
+    if (wakeLock || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch (_) {
+      // Needs a secure context and a user gesture on some browsers; not essential.
+    }
+  }
+
+  // ---- boot ----
+
+  async function init() {
+    document.addEventListener('gesturestart', (event) => event.preventDefault());
+
+    let data;
+    let table;
+    try {
+      data = await loadData();
+    } catch (err) {
+      showFatal(`Could not load the price list: ${err.message}`);
+      return;
+    }
+    try {
+      table = B.loadPriceTable(data.csv);
+    } catch (err) {
+      showFatal(`Problem with data/price_table.csv: ${err.message}`);
+      return;
+    }
+    if (!table.items.length) {
+      showFatal('data/price_table.csv has no usable rows.');
+      return;
+    }
+
+    const { config, warnings: configWarnings } = B.normalizeConfig(data.config);
+    items = table.items;
+    document.title = config.title;
+    $('title').textContent = config.title;
+    showWarnings([...data.warnings, ...configWarnings, ...table.warnings]);
+
+    buildItems();
+    buildKeypad();
+    $('new-customer').addEventListener('click', newCustomer);
+    $('undo').addEventListener('click', undoClear);
+
+    cart = restoreCart();
+    render();
+    renderEntry();
+
+    keepAwake();
+    document.addEventListener('pointerdown', keepAwake);
+    document.addEventListener('visibilitychange', keepAwake);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
